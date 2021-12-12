@@ -265,16 +265,12 @@ void insertStrings(char new1[], char new2[], int n)
     int i;
     for (i = 0; i < strlen(new2); i++)
     {
-        for (index1 = strlen(new1); index1 >= n; index1--)
+        for (index1 = strlen(new1) + 1; index1 >= n; index1--)
         {
             new1[index1] = new1[index1 - 1];
         }
         new1[n] = new2[i];
         n = n + 1;
-    }
-    while (new1[strlen(new1)] < 33 && new1[strlen(new1)] > 126)
-    {
-        new1[strlen(new1)] = '\0';
     }
     printf("%s\n", new1);
 }

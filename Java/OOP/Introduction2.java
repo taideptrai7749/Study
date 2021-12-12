@@ -1,7 +1,7 @@
 import java.util.Scanner;
 
 class Rectangle {
-    double length, width;
+    private double length, width;
 
     public void getInformation() {
         Scanner sc = new Scanner(System.in);

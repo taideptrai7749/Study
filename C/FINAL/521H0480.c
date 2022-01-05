@@ -54,8 +54,7 @@ int main()
     diem = fopen("diem.csv", "r");
     dsmh = fopen("dsmh.csv", "r");
     dssv = fopen("dssv.csv", "r");
-    ketqua = fopen("kq.txt", "w");
-    error = fopen("error.txt", "w");
+    ketqua = fopen("log.txt", "w");
     if (diem == NULL || dsmh == NULL || dssv == NULL)
     {
         printf("Can't open one of the files");
@@ -87,9 +86,20 @@ int main()
         count++;
         tok = strtok(NULL, " ");
     }
+    int q;
+    for (q = 0; q < strlen(subFunc); q++)
+    {
+        if (isalnum(subFunc[q]) == 0)
+        {
+            count = 3;
+            break;
+        }
+    }
     if (count > 2 || countSpace > 1 || countSpace == 0)
     {
-        fprintf(error, "Invalid command");
+        countLines();
+        error = fopen("error.txt", "w");
+        fprintf(error, "invalid command");
     }
     else
     {
@@ -138,7 +148,8 @@ int main()
             }
             else
             {
-                fprintf(error, "Invalid command");
+                error = fopen("error.txt", "w");
+                fprintf(error, "invalid command");
             }
         }
         else if (!strcmp("top", newMainFunc))
@@ -149,6 +160,7 @@ int main()
             {
                 if (isdigit(newSubFunc[j]) == 0)
                 {
+                    error = fopen("error.txt", "w");
                     fprintf(error, "invalid command");
                     errorCheck++;
                     break;
@@ -159,7 +171,13 @@ int main()
                 int n = atoi(newSubFunc);
                 if (n <= 0)
                 {
+                    error = fopen("error.txt", "w");
                     fprintf(error, "invalid command");
+                }
+                else if (n > studentNumber)
+                {
+                    n = studentNumber;
+                    topN(student, n);
                 }
                 else
                 {
@@ -169,7 +187,8 @@ int main()
         }
         else
         {
-            fprintf(error, "Invalid command");
+            error = fopen("error.txt", "w");
+            fprintf(error, "invalid command");
         }
     }
     fclose(diem);
@@ -185,7 +204,7 @@ void countLines()
     diem = fopen("diem.csv", "r");
     dsmh = fopen("dsmh.csv", "r");
     dssv = fopen("dssv.csv", "r");
-    ketqua = fopen("kq.txt", "w");
+    ketqua = fopen("log.txt", "w");
     int count1 = 0;
     char c;
     while (!feof(dssv))
@@ -337,6 +356,7 @@ void readData(students student[], score studentScore[], subject subjects[])
     int i;
     int studentCount = numberOfStudents();
     int scoreCount = numberOfScore();
+    int subjectCount = numberOfSubject();
     for (i = 0; i < studentCount; i++)
     {
         double score = 0.0;
@@ -345,14 +365,30 @@ void readData(students student[], score studentScore[], subject subjects[])
         int j;
         for (j = 0; j < scoreCount; j++)
         {
+            int subCount = 0;
+            double subScore = 0.0;
             if (!(strcmp(student[i].id, studentScore[j].studentID)))
             {
-                score = score + studentScore[j].subjectScore;
-                count++;
+                int k;
+                for (k = 0; k < subjectCount; k++)
+                {
+                    if (!strcmp(subjects[k].subjectID, studentScore[j].subjectID))
+                    {
+                        subCount = subjects[k].subjectCredit;
+                        subScore = subCount * studentScore[j].subjectScore;
+                        count = count + subCount;
+                        score = score + subScore;
+                    }
+                }
             }
         }
-        average = score / (1.0 * count);
-        student[i].averageScore = average;
+        if (count == 0)
+            student[i].averageScore = 0.0;
+        else
+        {
+            average = score / (1.0 * count);
+            student[i].averageScore = average;
+        }
     }
     for (i = 0; i < studentCount - 1; i++)
     {
@@ -366,7 +402,7 @@ void readData(students student[], score studentScore[], subject subjects[])
 void listClass(students stu[], char class[])
 {
     FILE *result;
-    result = fopen("ketqua.csv", "w");
+    result = fopen("result.csv", "w");
     int i;
     int newLine = 0;
     int numberStudent = numberOfStudents();
@@ -391,11 +427,11 @@ void listClass(students stu[], char class[])
 void countSex(students stu[], char sex[])
 {
     FILE *result;
-    result = fopen("ketqua.csv", "w");
+    result = fopen("result.csv", "w");
     int i;
     int numberStudent = numberOfStudents();
     int count = 0;
-    char sexIdentify[100];
+    char sexIdentify[6];
     for (i = 0; i < strlen(sex); i++)
     {
         if (i == 0)
@@ -405,6 +441,7 @@ void countSex(students stu[], char sex[])
         else
             sexIdentify[i] = tolower(sex[i]);
     }
+    sexIdentify[strlen(sex)] = '\0';
     for (i = 0; i < numberStudent; i++)
     {
         if (!strcmp(sexIdentify, stu[i].gender))
@@ -412,14 +449,23 @@ void countSex(students stu[], char sex[])
             count++;
         }
     }
-    fprintf(result, "%d", count);
+    if (count == 0)
+    {
+        FILE *error = fopen("error.txt", "w");
+        fprintf(error, "invalid command");
+        fclose(error);
+    }
+    else
+    {
+        fprintf(result, "%d", count);
+    }
     fclose(result);
 }
 
 void countryList(students stu[], char country[])
 {
     FILE *result;
-    result = fopen("ketqua.csv", "w");
+    result = fopen("result.csv", "w");
     int i;
     int newLine = 0;
     int numberStudent = numberOfStudents();
@@ -454,7 +500,7 @@ void countryList(students stu[], char country[])
 void sortAsc(students stu[])
 {
     FILE *result;
-    result = fopen("ketqua.csv", "w");
+    result = fopen("result.csv", "w");
     int i;
     int numberStudent = numberOfStudents();
     students temp;
@@ -471,20 +517,26 @@ void sortAsc(students stu[])
                     stu[i] = stu[j];
                     stu[j] = temp;
                 }
-                else if (stu[i].dob.month > stu[j].dob.month)
+                else if (stu[i].dob.year == stu[j].dob.year)
                 {
-                    temp = stu[i];
-                    stu[i] = stu[j];
-                    stu[j] = temp;
-                }
-                else if (stu[i].dob.date > stu[j].dob.date)
-                {
-                    temp = stu[i];
-                    stu[i] = stu[j];
-                    stu[j] = temp;
+                    if (stu[i].dob.month > stu[j].dob.month)
+                    {
+                        temp = stu[i];
+                        stu[i] = stu[j];
+                        stu[j] = temp;
+                    }
+                    else if (stu[i].dob.month == stu[j].dob.month)
+                    {
+                        if (stu[i].dob.date > stu[j].dob.date)
+                        {
+                            temp = stu[i];
+                            stu[i] = stu[j];
+                            stu[j] = temp;
+                        }
+                    }
                 }
             }
-            if (strcmp(stu[i].firstName, stu[j].firstName) > 0)
+            else if (strcmp(stu[i].firstName, stu[j].firstName) > 0)
             {
                 temp = stu[i];
                 stu[i] = stu[j];
@@ -509,7 +561,7 @@ void sortAsc(students stu[])
 void sortDesc(students stu[])
 {
     FILE *result;
-    result = fopen("ketqua.csv", "w");
+    result = fopen("result.csv", "w");
     int i;
     int studentNumber = numberOfStudents();
     students temp;
@@ -526,20 +578,26 @@ void sortDesc(students stu[])
                     stu[i] = stu[j];
                     stu[j] = temp;
                 }
-                else if (stu[i].dob.month < stu[j].dob.month)
+                else if (stu[i].dob.year == stu[j].dob.year)
                 {
-                    temp = stu[i];
-                    stu[i] = stu[j];
-                    stu[j] = temp;
-                }
-                else if (stu[i].dob.date < stu[i].dob.date)
-                {
-                    temp = stu[i];
-                    stu[i] = stu[j];
-                    stu[j] = temp;
+                    if (stu[i].dob.month < stu[j].dob.month)
+                    {
+                        temp = stu[i];
+                        stu[i] = stu[j];
+                        stu[j] = temp;
+                    }
+                    else if (stu[i].dob.month == stu[j].dob.month)
+                    {
+                        if (stu[i].dob.date < stu[i].dob.date)
+                        {
+                            temp = stu[i];
+                            stu[i] = stu[j];
+                            stu[j] = temp;
+                        }
+                    }
                 }
             }
-            if (strcmp(stu[i].firstName, stu[j].firstName) < 0)
+            else if (strcmp(stu[i].firstName, stu[j].firstName) < 0)
             {
                 temp = stu[i];
                 stu[i] = stu[j];
@@ -564,7 +622,7 @@ void sortDesc(students stu[])
 void topN(students stu[], int number)
 {
     FILE *result;
-    result = fopen("ketqua.csv", "w");
+    result = fopen("result.csv", "w");
     int i;
     int studentNumber = numberOfStudents();
     students temp;
